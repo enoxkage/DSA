@@ -1,5 +1,6 @@
 import ballerina/http;
 
+
 public type Student record {
 
 int studentNumber?;
@@ -42,13 +43,13 @@ resource function get students() returns Student[]|http:Response {
     return allstu;
     
     }
-    resource function post student(@http:Payload Student payload) returns createdStudent|http:Created {
+    resource function post students(@http:Payload Student payload) returns createdStudent|http:Created {
     payload.studentNumber = allstu.length();
     allstu.push(payload);
     return <http:Created>{};
    
     }
-    resource function get student/[int studentNumber]() returns Student|http:NotFound {
+    resource function get students/[int studentNumber]() returns Student|http:NotFound {
       Student? student = allstu[studentNumber];
         if student is () {
             return http:NOT_FOUND;
@@ -56,20 +57,29 @@ resource function get students() returns Student[]|http:Response {
             return student;
         }
     }
-    resource function put student/[string username](@http:Payload Student payload) returns Student|http:Response {
-      http:Response Updte =new;
-    return Updte;
-   
+    resource function put students/[int studentNumber](@http:Payload Student payload) returns Student|http:NotFound {
+    Student? Updtstudent = allstu[studentNumber];
+        if Updtstudent is () {
+            return http:NOT_FOUND;
+        } else {
+           
+           payload.studentNumber = allstu.length();
+    allstu.push(payload);
+    return Updtstudent;
+        }
+    
     }
-
-    resource function put course/[string  username](@http:Payload Student payload) returns Course|http:Response {
-    http:Response coursUpdte =new;
-    return coursUpdte;
-   
-    }
-
-    resource function delete student/[int studentNumber]() returns http:NoContent|http:Response {
-     http:Response delet =new;
-    return delet;
-    }
+    resource function delete students/[int studentNumber](@http:Payload Student payload) returns Student|http:NotFound{
+        
+     Student? delet_student = allstu[studentNumber];
+        if delet_student is () {
+            return http:NOT_FOUND;
+        } else {
+            delet_student = {};
+            return http:NOT_FOUND;
+            
+        }
+    
+    }  
 }
+

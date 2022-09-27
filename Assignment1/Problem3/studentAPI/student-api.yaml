@@ -1,0 +1,135 @@
+openapi: "3.0.1"
+
+info:
+  title: open api specifications for studentAPI
+  version: "0.0.1"
+
+servers:
+  - url: http://localhost:9090/student
+
+
+paths:
+  /student:
+    get:
+      summary: Get all students added to the application
+      operationId: get_all
+      description: Returns all students registered for the application
+      responses:
+        '200':
+          description: "A list of students"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      summary: Insert a new student
+      operationId: insert
+      description: Create a new student and add it to the collection of users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Student'
+      responses:
+        '201':
+          description: Student successfully created
+          content:
+            application/json:
+              schema:
+                properties:
+                  studentid:
+                    type: int
+                    description: the student details of the student newly created
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+
+  /students/{studentNumber}:
+    parameters:
+      - name: studentName
+        in: path
+        description: studentName of the students
+        schema:
+          type: string
+        required: true
+    get:
+      summary: Get a single upser
+      operationId: get_students
+      description: Returns a single student based on the studentNumber
+      responses:
+        '200':
+          description: student response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      summary: Update an existing student
+      operationId: update_student
+      description: updates an existing student
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Student"
+      responses:
+        '200':
+          description: 'Student was successfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      summary: Delete an existing student
+      operationId: delete_student
+      description: deletes an existing student
+      responses:
+        '204':
+          description: Student was successfully deleted
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+components:
+  schemas:
+    Student:
+      title: Student Description
+      type: object
+      properties:
+        studentName:
+          type: string
+          description: the Name of the student
+        studentSurname:
+          type: string
+          description: the Surname of the student
+        studentEmail:
+          type: string
+          description: the student email address of the student
+    Error:
+      type: object
+      properties:
+        errorType:
+          type: string
+          enum:
+            - BadRequest
+
+            - Not Found
+
+            - InternalServerError
+        message:
+          type: string
+
+  responses:
+    ErrorResponse:
+      description: Error handling user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

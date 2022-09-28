@@ -1,85 +1,88 @@
 import ballerina/http;
+import ballerina/io;
 
+type Students record {|
+    readonly int studentNumber;
+    string name;
+    string email;
+    map<string> courses;
+|};
 
-public type Student record {
+table<Students> key(studentNumber) studentTable = table[];
 
-int studentNumber?;
-string studentName?;
-string studentSurname?;
-string studentEmail?;
-Course studentCourse?;
-
-};
-
-Student[] allstu=[];
-
-public type Course record {
-
-readonly string code;
-string courseName;
-string weights;
-int marks;
-
-};
-
-public table <Course> key(code) courseT= table [
-{code: "dsa126s", courseName: "Distributed Systems", weights: "Assignment 1 = 25% Assignment 2 = 25%", marks: 50},
-{code: "wad234s", courseName: "Web Application and Development", weights: "Assignment 1 = 25% Assignment 2 = 25%",marks: 45 },
-{code: "efc178s", courseName: "Ethics for Computing", weights: "Assignment 1 = 25% Assignment 2 = 25%", marks: 78 }
-];
-
-public type createdStudent record {|
-
-*http:Created;
-createdStudent body;
-
+ type CreatedStudentEntries record {|
+    *http:Created;
+     Students[] body;
 |};
 
 
 
-service /student on new http:Listener(9090) {
+service /student on new http:Listener(9090){
 
-resource function get students() returns Student[]|http:Response {
-    return allstu;
-    
+     resource function get students() returns Students|anydata{
+        lock {
+            return studentTable.clone();
+        }
     }
-    resource function post students(@http:Payload Student payload) returns createdStudent|http:Created {
-    payload.studentNumber = allstu.length();
-    allstu.push(payload);
-    return <http:Created>{};
+
+
+     resource function get student/[int studentNumber]()returns Students|anydata {
+        lock {
+            foreach Students item in studentTable {
+                if(studentNumber == item.studentNumber){
+                    return studentTable.get(studentNumber);
+                }else{
+                    return "student does not exist";
+                }
+            }
+        }        
+    }
+    
+    resource function post student(@http:Payload Students[] studentEntries) returns CreatedStudentEntries{
+        lock{
+        studentEntries.forEach(Students => studentTable.add(Students));
+        return <CreatedStudentEntries>{body:studentEntries};
+    }
+    
+   }
+
+    resource function put student/[int studentNumber](@http:Payload Students[] updateEntry) returns CreatedStudentEntries|anydata{
+        lock{
+        foreach Students item in studentTable{
+            if studentNumber == item.studentNumber {
+                updateEntry.forEach(Students => studentTable.put(Students));
+            }
+        }
+        return<CreatedStudentEntries>{body:updateEntry};                           
+        }
+    }
+
+    resource function put updateCourse/[int studentNumber](@http:Payload map<string> courses) returns string{
+        foreach Students i in studentTable{
+            if studentNumber == i.studentNumber {
+                i.courses = courses;
+                return "update is successful";
+            }
+            else{
+                return "no such field exists";
+            }
+        }
+        return "update is successful";
+    }
+    
+    resource function delete student/[int studentNumber]() returns string{
+    foreach Students item in studentTable {
+        if studentNumber == item.studentNumber{
+            Students remove = studentTable.remove(studentNumber);
+            io:print(remove);
+            return "deleted successfully";
+        }
+        else{
+            return "no such field exists";
+        }
+    }
+        return "deleted successfully";
+    }
+
    
-    }
-    resource function get students/[int studentNumber]() returns Student|http:NotFound {
-      Student? student = allstu[studentNumber];
-        if student is () {
-            return http:NOT_FOUND;
-        } else {
-            return student;
-        }
-    }
-    resource function put students/[int studentNumber](@http:Payload Student payload) returns Student|http:NotFound {
-    Student? Updtstudent = allstu[studentNumber];
-        if Updtstudent is () {
-            return http:NOT_FOUND;
-        } else {
-           
-           payload.studentNumber = allstu.length();
-    allstu.push(payload);
-    return Updtstudent;
-        }
-    
-    }
-    resource function delete students/[int studentNumber](@http:Payload Student payload) returns Student|http:NotFound{
-        
-     Student? delet_student = allstu[studentNumber];
-        if delet_student is () {
-            return http:NOT_FOUND;
-        } else {
-            delet_student = {};
-            return http:NOT_FOUND;
-            
-        }
-    
-    }  
 }
-
